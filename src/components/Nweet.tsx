@@ -1,5 +1,6 @@
-import { dbService } from 'fBase';
-import { deleteDoc, doc, updateDoc } from 'firebase/firestore';
+import { dbService, storageService } from 'fBase';
+import { deleteDoc, doc, DocumentData, updateDoc } from 'firebase/firestore';
+import { deleteObject, ref } from 'firebase/storage';
 import { useState } from 'react';
 
 // https://firebase.google.com/docs/firestore/manage-data/delete-data
@@ -15,6 +16,9 @@ function Nweet({ nweetObj, isOwner }: any) {
     if (ok) {
       // nweet 삭제
       await deleteDoc(nweetText);
+      if (nweetObj.fileURL !== '') {
+        await deleteObject(ref(storageService, nweetObj.fileURL));
+      }
     }
   };
   const toggleEditing = () => setEditing((prev) => !prev);
@@ -51,6 +55,9 @@ function Nweet({ nweetObj, isOwner }: any) {
       ) : (
         <>
           <h4>{nweetObj.text}</h4>
+          {nweetObj.fileURL && (
+            <img src={nweetObj.fileURL} width="50px" height="50px" />
+          )}
           {isOwner && (
             <>
               <button onClick={onDeleteClick}>삭제</button>
