@@ -1,10 +1,10 @@
 import { dbService, storageService } from 'fBase';
-import { deleteDoc, doc, DocumentData, updateDoc } from 'firebase/firestore';
+import { deleteDoc, doc, updateDoc } from 'firebase/firestore';
 import { deleteObject, ref } from 'firebase/storage';
 import { useState } from 'react';
 
 // https://firebase.google.com/docs/firestore/manage-data/delete-data
-//https://firebase.google.com/docs/firestore/manage-data/add-data#update-data
+// https://firebase.google.com/docs/firestore/manage-data/add-data#update-data
 
 function Nweet({ nweetObj, isOwner }: any) {
   const [editing, setEditing] = useState(false); // 수정 모드인지 아닌지

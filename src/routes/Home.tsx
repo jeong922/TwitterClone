@@ -31,8 +31,7 @@ function Home({ userObj }: any) {
   //console.log(userObj);
   const [nweet, setNweet] = useState('');
   const [nweets, setNweets] = useState<ISnapshotData[]>([]);
-  const [file, setFile] = useState(''); // 타입을 이렇게 줘도 되는지 모르겠다..
-
+  const [file, setFile] = useState('');
   useEffect(() => {
     const q = query(
       collection(dbService, 'nweets'),
