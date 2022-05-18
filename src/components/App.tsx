@@ -4,6 +4,7 @@ import { auth } from 'fBase';
 import { onAuthStateChanged, updateProfile } from 'firebase/auth';
 
 // https://firebase.google.com/docs/auth/web/manage-users#get_the_currently_signed-in_user
+
 function App() {
   const [init, setInit] = useState(false);
   const [isLoggendIn, setIsLoggedIn] = useState(false);
@@ -49,7 +50,7 @@ function App() {
     // },
     // });
     // setUserObj(Object.assign({}, user));
-    setNewName(userObj.displayName);
+    setNewName(user.displayName);
     // 뭔가 동작이 이상함..
   };
   return (
@@ -62,7 +63,7 @@ function App() {
           newName={newName}
         />
       ) : (
-        'Initializing...'
+        <span>Initializing...</span>
       )}
       {/* <footer>&copy; {new Date().getFullYear()} Nwitter</footer> */}
     </>
