@@ -1,7 +1,6 @@
-import { auth, dbService } from 'fBase';
+import { auth } from 'fBase';
 import { updateProfile } from 'firebase/auth';
-import { collection, getDocs, orderBy, query, where } from 'firebase/firestore';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
 
@@ -91,17 +90,13 @@ function Profile({ refreshUser, userObj, newName }: any) {
   };
   const onSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    //const user: any = auth.currentUser;
-    if (userObj.displayName !== newName) {
-      await updateProfile(userObj, {
+    const user: any = auth.currentUser;
+    if (userObj.displayName !== newDisplayName) {
+      await updateProfile(user, {
         displayName: newDisplayName,
       });
       refreshUser();
     }
-    // if (newName !== userObj.displayName) {
-    //   await updateProfile(userObj, { displayName: newName });
-    //   refreshUser();
-    // }
   };
   return (
     <Wrapper>
