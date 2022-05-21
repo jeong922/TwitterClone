@@ -15,7 +15,7 @@ import styled from 'styled-components';
 // https://developer.mozilla.org/ko/docs/Web/API/FileReader
 // https://firebase.google.com/docs/storage/web/create-reference?hl=ko&authuser=0
 // https://firebase.google.com/docs/storage/web/upload-files?hl=ko&authuser=0#upload_from_a_string
-interface ISnapshotData {
+export interface ISnapshotData {
   data: DocumentData;
   id: string;
   text: string;
