@@ -64,6 +64,30 @@ const NweetContainer = styled.div`
   padding: 10px 5px;
 `;
 
+const ProfileWrapper = styled.div`
+  display: flex;
+  align-items: center;
+  margin-left: 10px;
+  div {
+    width: 35px;
+    height: 35px;
+    border-radius: 50%;
+    background-color: rgba(0, 0, 0, 0.3);
+    img {
+      background-position: cover;
+      background-repeat: no-repeat;
+      background-size: cover;
+      width: 35px;
+      height: 35px;
+      border-radius: 50%;
+    }
+  }
+  span {
+    margin-left: 10px;
+    font-weight: 600;
+  }
+`;
+
 const ImageWrapper = styled.div`
   display: flex;
   justify-content: center;
@@ -79,7 +103,7 @@ const NweetText = styled.span`
   padding: 5px;
 `;
 
-function Nweet({ nweetObj, isOwner }: any) {
+function Nweet({ nweetObj, isOwner, userObj }: any) {
   const [editing, setEditing] = useState(false); // 수정 모드인지 아닌지
   const [newNweet, setNewNweet] = useState(nweetObj.text); // input text 업데이트
   const nweetText = doc(dbService, 'nweets', `${nweetObj.id}`);
@@ -129,6 +153,15 @@ function Nweet({ nweetObj, isOwner }: any) {
         </>
       ) : (
         <NweetContainer>
+          <ProfileWrapper>
+            <div>{userObj.photoURL && <img src={userObj.photoURL} />}</div>
+            <span>
+              {userObj.displayName
+                ? userObj.displayName
+                : userObj.email.split('@')[0]}
+            </span>
+          </ProfileWrapper>
+
           {nweetObj.fileURL && (
             <ImageWrapper>
               <img src={nweetObj.fileURL} />

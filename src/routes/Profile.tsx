@@ -1,8 +1,15 @@
-import { auth } from 'fBase';
+import { auth, storageService } from 'fBase';
 import { updateProfile } from 'firebase/auth';
+import {
+  deleteObject,
+  getDownloadURL,
+  ref,
+  uploadString,
+} from 'firebase/storage';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
+import { v4 as uuidv4 } from 'uuid';
 
 // https://firebase.google.com/docs/auth/web/manage-users#update_a_users_profile
 
@@ -64,9 +71,62 @@ const LogOut = styled.div`
   }
 `;
 
-function Profile({ refreshUser, userObj, newName }: any) {
+const FileSelector = styled.div`
+  label {
+    display: inline-block;
+    color: ${(props) => props.theme.light.fontColor};
+    border: 1px solid ${(props) => props.theme.dark.borderColor};
+    padding: 5px 8px;
+    border-radius: 5px;
+    margin-bottom: 10px;
+    cursor: pointer;
+    &:hover {
+      border: 1px solid ${(props) => props.theme.light.fontColor};
+    }
+  }
+  input {
+    display: none;
+  }
+`;
+
+const ProfileImage = styled.div`
+  margin: 20px auto;
+  max-height: 150px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  svg {
+    height: 80px;
+    width: 80px;
+    transform: translate(5px);
+    fill: rgba(0, 0, 0, 0.6);
+  }
+  div {
+    img {
+      max-height: 100px;
+    }
+  }
+  button {
+    margin-top: 10px;
+    padding: 5px 8px;
+    border-radius: 5px;
+    background-color: ${(props) => props.theme.light.fontColor};
+    color: ${(props) => props.theme.dark.fontColor};
+    cursor: pointer;
+    &:hover {
+      border: 1px solid ${(props) => props.theme.light.borderColor};
+      background-color: ${(props) => props.theme.dark.fontColor};
+      color: ${(props) => props.theme.light.fontColor};
+    }
+  }
+`;
+
+function Profile({ refreshUser, userObj }: any) {
   const navigate = useNavigate();
+  const [profileImage, setProfileImage] = useState('');
   const [newDisplayName, setNewDisplayName] = useState(userObj.displayName);
+  // const [file, setFile] = useState('');
   const onLogOutClick = () => {
     auth.signOut();
     navigate('/');
@@ -91,13 +151,51 @@ function Profile({ refreshUser, userObj, newName }: any) {
   const onSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const user: any = auth.currentUser;
-    if (userObj.displayName !== newDisplayName) {
+    let profileURL = '';
+    if (profileImage !== '') {
+      const profileRef = ref(storageService, `${userObj.uid}/${uuidv4()}`);
+      const uploadFile = await uploadString(
+        profileRef,
+        profileImage,
+        'data_url'
+      );
+      profileURL = await getDownloadURL(uploadFile.ref);
+      await updateProfile(user, {
+        photoURL: profileURL,
+      });
+      refreshUser();
+      // if (uploadFile.ref !== userObj.photoURL) {
+      //   const delProfileRef = ref(storageService, profileImage);
+      //   await deleteObject(delProfileRef);
+      // }
+    } else if (userObj.displayName !== newDisplayName) {
       await updateProfile(user, {
         displayName: newDisplayName,
       });
       refreshUser();
     }
+    setProfileImage('');
   };
+  const onImageChange = (event: any) => {
+    const {
+      target: { files },
+    } = event;
+    const theFile = files[0];
+    const reader = new FileReader();
+    reader.onloadend = (finishedEvent: any) => {
+      const {
+        currentTarget: { result },
+      } = finishedEvent;
+      setProfileImage(result);
+    };
+    reader.readAsDataURL(theFile);
+  };
+
+  const onClearFileClick = () => {
+    setProfileImage('');
+  };
+  console.log(userObj);
+
   return (
     <Wrapper>
       <Container>
@@ -108,6 +206,49 @@ function Profile({ refreshUser, userObj, newName }: any) {
             placeholder="변경할 이름을 입력하세요."
             value={newDisplayName}
           />
+          <FileSelector>
+            <label htmlFor="file">이미지 선택</label>
+            <input
+              type="file"
+              id="file"
+              accept="image/*"
+              onChange={onImageChange}
+            />
+          </FileSelector>
+          {/* {profileImage ? (
+            <ProfileImage>
+              <div>
+                <img src={profileImage} />
+              </div>
+              <button onClick={onClearFileClick}>이미지 선택 취소</button>
+            </ProfileImage>
+          ) : (
+            <ProfileImage>
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+                <path d="M224 256c70.7 0 128-57.31 128-128s-57.3-128-128-128C153.3 0 96 57.31 96 128S153.3 256 224 256zM274.7 304H173.3C77.61 304 0 381.6 0 477.3c0 19.14 15.52 34.67 34.66 34.67h378.7C432.5 512 448 496.5 448 477.3C448 381.6 370.4 304 274.7 304z" />
+              </svg>
+            </ProfileImage>
+          )} */}
+          {profileImage ? (
+            <ProfileImage>
+              <div>
+                <img src={profileImage} />
+              </div>
+              <button onClick={onClearFileClick}>이미지 선택 취소</button>
+            </ProfileImage>
+          ) : userObj.photoURL ? (
+            <ProfileImage>
+              <div>
+                <img src={userObj.photoURL} />
+              </div>
+            </ProfileImage>
+          ) : (
+            <ProfileImage>
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+                <path d="M224 256c70.7 0 128-57.31 128-128s-57.3-128-128-128C153.3 0 96 57.31 96 128S153.3 256 224 256zM274.7 304H173.3C77.61 304 0 381.6 0 477.3c0 19.14 15.52 34.67 34.66 34.67h378.7C432.5 512 448 496.5 448 477.3C448 381.6 370.4 304 274.7 304z" />
+              </svg>
+            </ProfileImage>
+          )}
           <EditingBtn type="submit" value="프로필 업데이트" />
         </Editing>
         <LogOut>

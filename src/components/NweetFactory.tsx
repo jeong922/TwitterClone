@@ -85,7 +85,7 @@ const ImageWrapper = styled.div`
 function NweetFactory({ userObj }: any) {
   const [file, setFile] = useState('');
   const [nweet, setNweet] = useState('');
-  const onSubmit = async (event: any) => {
+  const onSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     let fileURL = '';
     if (file !== '') {
