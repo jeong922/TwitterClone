@@ -85,7 +85,8 @@ const ImageWrapper = styled.div`
 function NweetFactory({ userObj }: any) {
   const [file, setFile] = useState('');
   const [nweet, setNweet] = useState('');
-  const onSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+
+  const onNweetSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     let fileURL = '';
     if (file !== '') {
@@ -97,13 +98,17 @@ function NweetFactory({ userObj }: any) {
       text: nweet,
       createdAt: Date.now(),
       creatorId: userObj.uid, // 유저 아이디
+      userName: userObj.displayName || userObj.email,
+      userImage: userObj.photoURL,
       fileURL,
     };
+    // Cloud Firestore에서 자동으로 ID를 생성하도록 할때 add() 사용
     await addDoc(collection(dbService, 'nweets'), nweetObj);
     setNweet('');
     setFile('');
   };
-  const onChange = (event: React.FormEvent<HTMLInputElement>) => {
+
+  const onNweetTextChange = (event: React.FormEvent<HTMLInputElement>) => {
     const {
       currentTarget: { value },
     } = event;
@@ -129,10 +134,10 @@ function NweetFactory({ userObj }: any) {
     setFile('');
   };
   return (
-    <NweetMaker onSubmit={onSubmit}>
+    <NweetMaker onSubmit={onNweetSubmit}>
       <NweetText
         value={nweet}
-        onChange={onChange}
+        onChange={onNweetTextChange}
         type="text"
         placeholder="What's on your mind?"
         maxLength={120}

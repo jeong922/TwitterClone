@@ -1,5 +1,6 @@
-import { auth, storageService } from 'fBase';
+import { auth, dbService, storageService } from 'fBase';
 import { updateProfile } from 'firebase/auth';
+import { doc, updateDoc } from 'firebase/firestore';
 import {
   deleteObject,
   getDownloadURL,
@@ -109,8 +110,14 @@ const ProfileImage = styled.div`
     fill: rgba(0, 0, 0, 0.6);
   }
   div {
+    height: 100px;
+    width: 100px;
+    border-radius: 70%;
+    overflow: hidden;
     img {
-      max-height: 100px;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
     }
   }
   button {
@@ -132,10 +139,12 @@ function Profile({ refreshUser, userObj }: any) {
   const navigate = useNavigate();
   const [profileImage, setProfileImage] = useState('');
   const [newDisplayName, setNewDisplayName] = useState(userObj.displayName);
+  const user: any = auth.currentUser;
   const onLogOutClick = () => {
     auth.signOut();
     navigate('/');
   };
+
   // const getMyNweets = async () => {
   //   const q = query(
   //     collection(dbService, 'nweets'),
@@ -147,15 +156,16 @@ function Profile({ refreshUser, userObj }: any) {
   // useEffect(() => {
   //   getMyNweets();
   // }, []);
-  const onChange = (event: React.FormEvent<HTMLInputElement>) => {
+
+  const onNameChange = (event: React.FormEvent<HTMLInputElement>) => {
     const {
       currentTarget: { value },
     } = event;
     setNewDisplayName(value);
   };
+  // 이름 변경
   const onNameSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    const user: any = auth.currentUser;
     if (userObj.displayName !== newDisplayName) {
       await updateProfile(user, {
         displayName: newDisplayName,
@@ -163,12 +173,15 @@ function Profile({ refreshUser, userObj }: any) {
       refreshUser();
     }
   };
+  // 프로필 사진 변경
   const onImageSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    const user: any = auth.currentUser;
     let profileURL = '';
     if (profileImage !== '') {
-      const profileRef = ref(storageService, `${userObj.uid}/${uuidv4()}`);
+      const profileRef = ref(
+        storageService,
+        `${userObj.uid}/profile/${uuidv4()}`
+      );
       const uploadFile = await uploadString(
         profileRef,
         profileImage,
@@ -178,11 +191,18 @@ function Profile({ refreshUser, userObj }: any) {
       await updateProfile(user, {
         photoURL: profileURL,
       });
+      if (user.photoURL !== userObj.photoURL) {
+        //const delProfileRef = ref(storageService, userObj.photoURL);
+        await deleteObject(ref(storageService, userObj.photoURL));
+        // 약간 버그가 있음..😢
+        // 새로고침 후 프로필 사진 변경하면 Storage에 이전 프로필 사진이 그대로 남아 있음
+        // if 조건을 수정해야 할 것 같음.
+      } else if (!ref(storageService, `${userObj.uid}/profile`)) {
+        await updateProfile(user, {
+          photoURL: profileURL,
+        });
+      }
       refreshUser();
-    }
-    if (user.photoURL !== userObj.photoURL) {
-      const delProfileRef = ref(storageService, userObj.photoURL);
-      await deleteObject(delProfileRef);
     }
     setProfileImage('');
   };
@@ -205,14 +225,13 @@ function Profile({ refreshUser, userObj }: any) {
   const onClearFileClick = () => {
     setProfileImage('');
   };
-  console.log(userObj);
 
   return (
     <Wrapper>
       <Container>
         <EditingName onSubmit={onNameSubmit}>
           <EditingText
-            onChange={onChange}
+            onChange={onNameChange}
             type="text"
             placeholder="변경할 이름을 입력하세요."
             value={newDisplayName}

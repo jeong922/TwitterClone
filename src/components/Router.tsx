@@ -4,7 +4,7 @@ import Auth from '../routes/Auth';
 import Home from '../routes/Home';
 import Navigation from './Navigation';
 
-function Router({ refreshUser, isLoggendIn, userObj, newName }: any) {
+function Router({ refreshUser, isLoggendIn, userObj }: any) {
   return (
     <BrowserRouter basename={process.env.PUBLIC_URL}>
       {isLoggendIn && <Navigation userObj={userObj} />}
@@ -14,13 +14,7 @@ function Router({ refreshUser, isLoggendIn, userObj, newName }: any) {
             <Route path="/" element={<Home userObj={userObj} />}></Route>
             <Route
               path="/profile"
-              element={
-                <Profile
-                  userObj={userObj}
-                  refreshUser={refreshUser}
-                  newName={newName}
-                />
-              }
+              element={<Profile userObj={userObj} refreshUser={refreshUser} />}
             ></Route>
           </>
         ) : (

@@ -1,8 +1,21 @@
-import { dbService, storageService } from 'fBase';
-import { deleteDoc, doc, updateDoc } from 'firebase/firestore';
-import { deleteObject, ref } from 'firebase/storage';
+import { auth, dbService, storageService } from 'fBase';
+import {
+  addDoc,
+  collection,
+  deleteDoc,
+  doc,
+  DocumentData,
+  updateDoc,
+} from 'firebase/firestore';
+import {
+  deleteObject,
+  getDownloadURL,
+  ref,
+  uploadString,
+} from 'firebase/storage';
 import { useState } from 'react';
 import styled from 'styled-components';
+import { v4 as uuidv4 } from 'uuid';
 
 // https://firebase.google.com/docs/firestore/manage-data/delete-data
 // https://firebase.google.com/docs/firestore/manage-data/add-data#update-data
@@ -55,6 +68,24 @@ const EditingBtn = styled.div`
   }
 `;
 
+const FileSelector = styled.div`
+  label {
+    display: inline-block;
+    color: ${(props) => props.theme.light.fontColor};
+    border: 1px solid ${(props) => props.theme.dark.borderColor};
+    padding: 5px 8px;
+    border-radius: 5px;
+    margin-bottom: 10px;
+    cursor: pointer;
+    &:hover {
+      border: 1px solid ${(props) => props.theme.light.fontColor};
+    }
+  }
+  input {
+    display: none;
+  }
+`;
+
 const NweetContainer = styled.div`
   display: flex;
   flex-direction: column;
@@ -90,23 +121,55 @@ const ProfileWrapper = styled.div`
 
 const ImageWrapper = styled.div`
   display: flex;
+  flex-direction: column;
+  align-items: center;
   justify-content: center;
   margin: 10px 0px;
   img {
     max-height: 200px;
     max-width: 200px;
   }
+  button {
+    margin-top: 10px;
+    padding: 5px 8px;
+    border-radius: 5px;
+    background-color: ${(props) => props.theme.light.fontColor};
+    color: ${(props) => props.theme.dark.fontColor};
+    cursor: pointer;
+    &:hover {
+      border: 1px solid ${(props) => props.theme.light.borderColor};
+      background-color: ${(props) => props.theme.dark.fontColor};
+      color: ${(props) => props.theme.light.fontColor};
+    }
+  }
 `;
 
 const NweetText = styled.span`
   margin-bottom: 10px;
-  padding: 5px;
+  padding: 5px 10px;
 `;
+
+// interface INweet {
+//   nweetObj: {
+//     text: string;
+//     createdAt: number;
+//     creatorId: string; // 유저 아이디
+//     userName: string;
+//     userImage: string;
+//     fileURL: string;
+//   };
+//   userObj: any;
+//   isOwner: boolean;
+// }
 
 function Nweet({ nweetObj, isOwner, userObj }: any) {
   const [editing, setEditing] = useState(false); // 수정 모드인지 아닌지
   const [newNweet, setNewNweet] = useState(nweetObj.text); // input text 업데이트
+  const [file, setFile] = useState('');
   const nweetText = doc(dbService, 'nweets', `${nweetObj.id}`);
+  const nweetUser = nweetObj.userName;
+  const nweetUserProfile = nweetObj.userImage;
+
   const onDeleteClick = async () => {
     const ok = window.confirm('정말 삭제하겠습니까?');
     //console.log(ok);
@@ -118,26 +181,65 @@ function Nweet({ nweetObj, isOwner, userObj }: any) {
       }
     }
   };
+
   const toggleEditing = () => setEditing((prev) => !prev);
-  const onSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+
+  const selectNewImage = async () => {
+    let fileURL = '';
+    if (file !== '') {
+      const fileRef = ref(storageService, `${userObj.uid}/${uuidv4()}`);
+      const uploadFile = await uploadString(fileRef, file, 'data_url');
+      fileURL = await getDownloadURL(uploadFile.ref);
+    }
+    setFile('');
+  };
+
+  const onUpdateSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    //console.log(nweetObj, newNweet);
     await updateDoc(nweetText, {
       text: newNweet,
     });
+    // if (file) {
+    //   await updateDoc(nweetText, {
+    //     fileURL: file,
+    //   });
+    //   selectNewImage();
+    // }
     setEditing(false);
   };
+
+  const onFileChange = (event: any) => {
+    const {
+      currentTarget: { files },
+    } = event;
+    const theFile = files[0];
+    const reader = new FileReader();
+    reader.onloadend = (finishedEvent: any) => {
+      console.log(finishedEvent);
+      const {
+        currentTarget: { result },
+      } = finishedEvent;
+      setFile(result);
+    };
+    reader.readAsDataURL(theFile);
+  };
+
   const onChange = (event: React.FormEvent<HTMLInputElement>) => {
     const {
       currentTarget: { value },
     } = event;
     setNewNweet(value);
   };
+
+  const onClearFileClick = () => {
+    setFile('');
+  };
+
   return (
     <Wrapper>
       {editing ? (
         <>
-          <Editing onSubmit={onSubmit}>
+          <Editing onSubmit={onUpdateSubmit}>
             <EditingText
               type="text"
               placeholder="수정수정"
@@ -145,6 +247,25 @@ function Nweet({ nweetObj, isOwner, userObj }: any) {
               required
               onChange={onChange}
             />
+            {/* {file ? (
+              <ImageWrapper>
+                <img src={file} />
+                <button onClick={onClearFileClick}>이미지 선택 취소</button>
+              </ImageWrapper>
+            ) : (
+              <ImageWrapper>
+                <img src={nweetObj.fileURL} />
+              </ImageWrapper>
+            )} */}
+            {/* <FileSelector>
+              <label htmlFor="image">이미지 선택</label>
+              <input
+                type="file"
+                id="image"
+                accept="image/*"
+                onChange={onFileChange}
+              />
+            </FileSelector> */}
             <EditingBtn>
               <input type="submit" value="업데이트" />
               <button onClick={toggleEditing}>취소</button>
@@ -153,14 +274,12 @@ function Nweet({ nweetObj, isOwner, userObj }: any) {
         </>
       ) : (
         <NweetContainer>
-          <ProfileWrapper>
-            <div>{userObj.photoURL && <img src={userObj.photoURL} />}</div>
-            <span>
-              {userObj.displayName
-                ? userObj.displayName
-                : userObj.email.split('@')[0]}
-            </span>
-          </ProfileWrapper>
+          {/* <ProfileWrapper>
+            <div>
+              <img src={nweetUserProfile} />
+            </div>
+            <span>{nweetUser}</span>
+          </ProfileWrapper> */}
 
           {nweetObj.fileURL && (
             <ImageWrapper>

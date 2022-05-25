@@ -23,7 +23,6 @@ export interface ISnapshotData {
 }
 
 const Wrapper = styled.div`
-  /* height: 100vh; */
   max-width: 480px;
   margin: 0 auto;
   padding: 10px;
@@ -32,13 +31,13 @@ const Wrapper = styled.div`
 const NweetContainer = styled.div``;
 
 function Home({ userObj }: any) {
-  //console.log(userObj);
   const [nweets, setNweets] = useState<ISnapshotData[]>([]);
   useEffect(() => {
     const q = query(
       collection(dbService, 'nweets'),
       orderBy('createdAt', 'desc') // 내림차순 정렬
     );
+    // onSnapshot() 문서 수신 대기
     onSnapshot(q, (snapshot) => {
       const newArray = snapshot.docs.map((document: any) => ({
         id: document.id,
@@ -47,7 +46,6 @@ function Home({ userObj }: any) {
       setNweets(newArray);
     });
   }, []);
-
   return (
     <Wrapper>
       <NweetFactory userObj={userObj} />

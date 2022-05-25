@@ -72,8 +72,8 @@ function AuthForm() {
         data = await signInWithEmailAndPassword(auth, email, password);
       }
       console.log(data);
-    } catch (error: any) {
-      setError(error.message);
+    } catch (error) {
+      setError((error as Error).message);
     }
   };
   const toggleAccount = () => setNewAccount((prev) => !prev);
